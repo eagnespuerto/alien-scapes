@@ -206,6 +206,15 @@ export function buildScene(s) {
   const leafSpd = light.energy.map((v, i) => v * leaf.reflectance[i]);
   const leafRgb = spdToSrgbToneMapped(leafSpd, exposure);
 
+  // A moon is a rock lit by the same star as the ground, so it goes through the
+  // same integral and the same exposure. Lunar-type regolith: about 12% albedo
+  // with a mild red slope. Getting this from a spectrum rather than tinting the
+  // star's own disk colour is what stops a moon rendering as a second sun -
+  // reflected light off a dark rock is nowhere near as bright as the source.
+  const moonSpd = direct.energy.map((v, i) =>
+    v * (0.10 + 0.055 / (1 + Math.exp(-(LAMBDA[i] - 620) / 140))));
+  const moonRgb = spdToSrgbToneMapped(moonSpd, exposure);
+
   const companion = s.companionOn && planet.companion ? resolveStar(planet.companion) : null;
   let companionRgb = null;
   if (companion) {
@@ -244,6 +253,7 @@ export function buildScene(s) {
       rock: rockRgb,
       water: waterRgb,
       leaf: leafRgb,
+      moon: moonRgb,
     },
     hex: {
       disk: toHex(diskRgb),
@@ -251,6 +261,7 @@ export function buildScene(s) {
       rock: toHex(rockRgb),
       water: toHex(waterRgb),
       leaf: toHex(leafRgb),
+      moon: toHex(moonRgb),
     },
     dayLuma: luma(skyZenith),
   };

@@ -115,36 +115,134 @@ function drawStar(ctx, scene, w, h, pos, star, rgb, angDiamDeg, intensity) {
   return radius;
 }
 
-/** Moons, lit from the direction of the star. */
+/**
+ * Moons, lit from the direction of the star.
+ *
+ * The lit fraction is bounded by a real terminator rather than an offset
+ * circle. On a sphere the terminator is a great circle, and a great circle seen
+ * from an angle projects to an ELLIPSE - so the lit region is a semicircle on
+ * the star side closed by a half-ellipse whose x-radius is r*cos(phase). When
+ * cos(phase) is positive that ellipse bulges away from the star and the moon is
+ * gibbous; when it is negative the ellipse cuts back across the lit side and the
+ * moon is a crescent. An offset circle cannot produce either shape, which is
+ * why the earlier version rendered a permanently full disk.
+ */
 function drawMoons(ctx, scene, w, h, starPos) {
   const count = scene.planet.moons || 0;
   if (!count) return;
   const rng = makeRng(scene.seed ^ 0x2b1e);
+
+  // Reflected light off a dark rock, not a light source: scene.colors.moon is
+  // the star's spectrum times a lunar-type regolith reflectance, tone-mapped on
+  // the same exposure as the ground. The floor only stops it vanishing outright
+  // on a very dim world.
+  const surface = floorColor(scene.colors.moon, 0.09);
+
+  // The sky is a gradient, so the airlight behind a moon depends on how high it
+  // sits. Sampling the zenith colour for a moon hanging near the horizon leaves
+  // its dark limb visibly darker than the sky around it.
+  const skyAtY = (yy) => mixRgb(
+    scene.colors.skyZenith, scene.colors.skyHorizon,
+    Math.pow(clamp01(yy / (h * HORIZON)), 2.1)
+  );
+
+  // Airlight ADDS, it does not blend. The moon sits outside the atmosphere, so
+  // the whole scattering column lies in front of it - and that column is
+  // exactly what makes the sky bright. Looking at the moon's dark side
+  // therefore gives the same airlight as looking at empty sky beside it, which
+  // is why an unlit limb is invisible in daylight rather than appearing as a
+  // dark disk. The lit side is that same sky PLUS the moon's own light,
+  // attenuated on the way down. Mixing toward the sky instead of adding is
+  // what made an earlier version punch a black hole in the sky at new moon.
+  // How much of the moon survives the haze. Note that scene.colors.moon is
+  // already attenuated once - it is built from the direct beam, which has the
+  // slant-path transmission baked in - so this is a visibility term, not a
+  // second transmission. Under a tholin or sulfuric-acid deck it goes to zero,
+  // which is the honest answer: you cannot pick a moon out of a Titan sky when
+  // the sun itself is only a dim smear.
+  const vis = clamp01(1 - scene.atm.haze / 0.55);
+  if (vis < 0.04) return;
+
+  const add = (base, extra) => [
+    Math.min(1, base[0] + extra[0]),
+    Math.min(1, base[1] + extra[1]),
+    Math.min(1, base[2] + extra[2]),
+  ];
+
   for (let i = 0; i < count; i++) {
-    const x = w * (0.08 + rng() * 0.84);
-    const y = h * HORIZON * (0.10 + rng() * 0.62);
-    // Sized on the same 60-degree field of view as the star. Earth's Moon
-    // spans about half a degree; allowing 0.4 to 1.8 degrees covers everything
-    // from a distant capture to a large close-in companion without producing
-    // the dinner-plate moon that gives away a matte painting.
     const r = ((0.4 + rng() * 1.4) / 60) * w * 0.5;
-    const lit = mixRgb(scene.colors.disk, [1, 1, 1], 0.25);
-    const dark = mixRgb(scene.colors.skyZenith, lit, 0.18);
+    const mottle = rng();
+
+    // Place the moon well away from the star, then read its phase off that
+    // placement rather than randomising the two independently. Phase angle and
+    // elongation are the same quantity: a moon near the star is necessarily a
+    // thin crescent, and only a moon opposite the star can be full. Getting
+    // this wrong is what let the old code draw a new moon in the middle of an
+    // empty sky, where no such thing can occur.
+    let x = 0, y = 0, sep = 0;
+    for (let tries = 0; tries < 16; tries++) {
+      x = w * (0.06 + rng() * 0.88);
+      y = h * HORIZON * (0.08 + rng() * 0.64);
+      sep = Math.hypot(x - starPos.x, y - starPos.y);
+      if (sep > w * 0.3 + r * 3) break;
+    }
+    // The canvas spans a 60-degree field of view, so pixels convert to degrees.
+    const elongation = Math.min(Math.PI, (sep / w) * 60 * (Math.PI / 180));
+    const phase = Math.PI - elongation;
+
+    // Regolith backscatters hard: near full phase a real moon is roughly twice
+    // as bright as a Lambertian sphere of the same albedo would be. That
+    // opposition surge is why a full moon looks so much brighter than a half
+    // moon rather than merely twice as bright as its lit area implies.
+    const surge = 1 + 0.9 * Math.max(0, Math.cos(phase));
+    const sky = skyAtY(y);
+    const lit = add(sky, scaleRgb(surface, surge * vis));
+    // Earthshine analogue: the night side catches light bounced off the planet.
+    const dark = add(sky, scaleRgb(surface, 0.03 * vis));
+
+    const toStar = Math.atan2(starPos.y - y, starPos.x - x);
 
     ctx.save();
+    ctx.translate(x, y);
+
+    // Whole disk in shadow first.
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = toCss(dark, 0.9);
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    // Terminator: offset a filled circle toward the star to carve the phase.
-    const dx = starPos.x - x, dy = starPos.y - y;
-    const len = Math.hypot(dx, dy) || 1;
-    const off = r * 0.55;
-    ctx.fillStyle = toCss(lit, 0.85);
-    ctx.beginPath();
-    ctx.arc(x + (dx / len) * off, y + (dy / len) * off, r * 1.02, 0, Math.PI * 2);
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = toCss(dark);
     ctx.fill();
+
+    // Then the lit region, with +x rotated to point at the star.
+    ctx.save();
+    ctx.rotate(toStar);
+    const rx = r * Math.cos(phase);
+    ctx.beginPath();
+    // Lit limb: the half of the circle facing the star, top to bottom.
+    ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+    // Terminator, closing the path back to the top. Canvas sweeps from pi/2 to
+    // -pi/2 the LONG way round (through pi, the far side) when anticlockwise is
+    // false, and the short way (through 0, the star side) when it is true. So a
+    // gibbous moon - terminator bulging away from the star - needs false, and a
+    // crescent - terminator cutting back across the lit face - needs true.
+    // Passing `rx > 0` here inverts both, turning every crescent into a gibbous.
+    ctx.ellipse(0, 0, Math.abs(rx), r, 0, Math.PI / 2, -Math.PI / 2, rx <= 0);
+    ctx.closePath();
+    ctx.fillStyle = toCss(lit);
+    ctx.fill();
+
+    // A few darker basins, so the disk is not a flat fill. Clipped to the lit
+    // region, because maria on the night side would not be visible.
+    ctx.clip();
+    const mr = makeRng(Math.floor(mottle * 1e6) ^ 0x4a11);
+    for (let k = 0; k < 4; k++) {
+      const a = mr() * Math.PI * 2;
+      const d = mr() * r * 0.62;
+      ctx.fillStyle = toCss(mixRgb(lit, dark, 0.22 + mr() * 0.2), 0.55);
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a) * d, Math.sin(a) * d,
+        r * (0.16 + mr() * 0.26), r * (0.12 + mr() * 0.22), a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
     ctx.restore();
   }
 }
