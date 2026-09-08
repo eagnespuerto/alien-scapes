@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alien-scapes — procedural landscapes under other suns</title>
+<meta name="description" content="Simulate procedurally generated alien landscapes under real stars and exoplanets. Physically computed sky, regolith and vegetation colours, with spectrum and pigment absorption charts, exportable as PNG, JPG or PDF.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23120f1a'/><circle cx='22' cy='10' r='5' fill='%23ffb56c'/><path d='M0 22 L8 16 L14 21 L22 14 L32 21 L32 32 L0 32Z' fill='%234a7c2f'/></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <h1>Alien-scapes</h1>
+  </div>
+  <p class="tagline">Procedural landscapes under real stars — every colour computed from a spectrum.</p>
+  <button class="ghost" id="aboutBtn" type="button">About the model</button>
+</header>
+
+<main class="layout">
+
+  <!-- ------------------------------------------------------------ -->
+  <aside class="panel controls" aria-label="World controls">
+
+    <section class="group">
+      <h2>Exoplanet preset</h2>
+      <select id="planetSelect" aria-label="Exoplanet preset"></select>
+      <p class="note" id="planetNote"></p>
+    </section>
+
+    <section class="group">
+      <h2>Star</h2>
+      <p class="sub">Spectral class — dwarfs above, giants below</p>
+      <div class="starGrid" id="starGrid" role="group" aria-label="Spectral class presets"></div>
+      <label class="field">
+        <span>More named stars</span>
+        <select id="namedSelect"></select>
+      </label>
+      <label class="field">
+        <span>Effective temperature <output id="teffOut"></output></span>
+        <input type="range" id="teff" min="1000" max="50000" step="10">
+      </label>
+      <button class="ghost small" id="teffReset" type="button">Reset to preset temperature</button>
+      <p class="note" id="starNote"></p>
+    </section>
+
+    <section class="group">
+      <h2>Atmosphere</h2>
+      <select id="atmSelect" aria-label="Atmosphere"></select>
+      <p class="note" id="atmNote"></p>
+      <label class="field">
+        <span>Star elevation <output id="elevOut"></output></span>
+        <input type="range" id="elev" min="0" max="90" step="1">
+      </label>
+      <p class="note">Lower the star and the light travels a longer slant path, so any
+        atmosphere becomes its own sunset.</p>
+    </section>
+
+    <section class="group">
+      <h2>Orbit &amp; surface</h2>
+      <label class="field">
+        <span>Orbital distance <output id="auOut"></output></span>
+        <input type="range" id="au" min="-3" max="3" step="0.005">
+      </label>
+      <div class="hzbar" id="hzbar" aria-hidden="true"><span class="hzzone"></span><span class="hzmark"></span></div>
+      <p class="note" id="hzNote"></p>
+      <label class="field">
+        <span>Surface water <output id="waterOut"></output></span>
+        <input type="range" id="water" min="0" max="1" step="0.01">
+      </label>
+      <label class="field">
+        <span>Terrain relief <output id="roughOut"></output></span>
+        <input type="range" id="rough" min="0" max="1" step="0.01">
+      </label>
+      <label class="field">
+        <span>Regolith</span>
+        <select id="mineralSelect"></select>
+      </label>
+      <p class="note" id="mineralNote"></p>
+    </section>
+
+    <section class="group">
+      <h2>Biosphere</h2>
+      <label class="field">
+        <span>Photosystem</span>
+        <select id="strategySelect"></select>
+      </label>
+      <p class="note" id="strategyNote"></p>
+    </section>
+
+    <section class="group">
+      <h2>Seed</h2>
+      <div class="seedRow">
+        <input type="text" id="seed" inputmode="numeric" aria-label="Terrain seed">
+        <button class="ghost small" id="reseed" type="button">Shuffle</button>
+      </div>
+      <p class="note">The same seed always redraws the same terrain, so an exported
+        sheet can be reproduced exactly.</p>
+    </section>
+
+  </aside>
+
+  <!-- ------------------------------------------------------------ -->
+  <div class="stage">
+
+    <figure class="viewport">
+      <canvas id="scape" aria-label="Rendered alien landscape"></canvas>
+      <figcaption id="scapeCaption"></figcaption>
+    </figure>
+
+    <div class="swatches" id="swatches"></div>
+
+    <section class="panel readout">
+      <div class="readCol">
+        <h3>Surface</h3>
+        <dl id="readSurface"></dl>
+      </div>
+      <div class="readCol">
+        <h3>Light</h3>
+        <dl id="readLight"></dl>
+      </div>
+      <div class="readCol">
+        <h3>Biosphere</h3>
+        <dl id="readBio"></dl>
+      </div>
+    </section>
+
+    <section class="panel verdict">
+      <p id="biomeLine"></p>
+      <p id="pigmentLine" class="dim"></p>
+    </section>
+
+    <section class="panel charts">
+      <div class="tabs" role="tablist">
+        <button role="tab" class="tab active" data-chart="spectrum">Surface spectrum</button>
+        <button role="tab" class="tab" data-chart="absorption">Pigment absorption</button>
+        <button role="tab" class="tab" data-chart="reflectance">Leaf reflectance</button>
+      </div>
+      <canvas id="chart" aria-label="Spectral chart"></canvas>
+      <p class="note" id="chartNote"></p>
+    </section>
+
+    <section class="panel exportBar">
+      <h3>Export</h3>
+      <p class="note">The sheet carries the landscape plus every number behind it — spectra,
+        pigment curves, colour hex values and the biome classification.</p>
+      <div class="btnRow">
+        <button id="expPng" type="button">Data sheet · PNG</button>
+        <button id="expJpg" type="button">Data sheet · JPG</button>
+        <button id="expPdf" type="button">Data sheet · PDF</button>
+        <button id="expScape" class="ghost" type="button">Landscape only · PNG</button>
+      </div>
+      <p class="note" id="exportStatus" role="status"></p>
+    </section>
+
+  </div>
+</main>
+
+<dialog id="aboutDlg">
+  <article>
+    <h2>How this works</h2>
+    <p>Nothing here is art-directed. Every colour on screen is the result of an
+      integral.</p>
+    <h3>Light</h3>
+    <p>The star is treated as a blackbody at its effective temperature. Planck's law
+      gives the emitted spectrum; an atmospheric transmission profile attenuates it
+      along a slant path whose length follows from the star's elevation, exactly as
+      Beer's law requires. The surviving spectrum is integrated against the CIE 1931
+      2° standard observer to get tristimulus XYZ, then converted to sRGB through the
+      D65 primaries. This path is ported from
+      <a href="https://github.com/eagnespuerto/starlight-filter" rel="noopener">starlight-filter</a>,
+      which uses it to drive a display's gamma ramp.</p>
+    <h3>Sky, ground and water</h3>
+    <p>A Rayleigh atmosphere scatters short wavelengths out of the beam, so the sky is
+      lit by exactly what the beam lost — which is why the same model produces a blue
+      noon and a red sunset without being told to. Dust and haze absorb instead of
+      scattering, so those skies take the transmitted tint rather than its complement,
+      which is why Mars is butterscotch. Ground colour is the downwelling light times a
+      mineral reflectance curve, integrated the same way.</p>
+    <h3>Vegetation</h3>
+    <p>Photosynthesis is a quantum process, so the model counts photons rather than
+      energy. A reaction-centre pigment is chosen by weighing how many photons it can
+      capture against how much energy each one is worth once thermalised down to the
+      trap — which is what stops far-red pigments winning everywhere. Antenna pigments
+      are then layered on, subject to what can physically attach to what. The leaf's
+      reflectance is what survives that absorption, and its colour is the illuminant
+      times that reflectance.</p>
+    <h3>Honesty</h3>
+    <p>Pigment absorption curves are sums of Gaussians placed at literature peak
+      positions. The peaks are real; the band shapes are modelled, not digitised from
+      measured spectra. Stellar luminosities and radii are rounded literature values.
+      Habitable-zone bounds use the Kopparapu et al. (2013) coefficients, which are
+      fitted for 2600–7200 K and are flagged as extrapolated outside that range. The
+      nitroplast curve deserves its own caveat: the nitroplast is a nitrogen-fixing
+      organelle that has lost photosystem II and RuBisCO, so it does not fix carbon —
+      the curve models the photosystem I antenna it still carries.</p>
+    <p>This is a worldbuilding and teaching tool, not a radiative-transfer code.</p>
+    <form method="dialog"><button type="submit">Close</button></form>
+  </article>
+</dialog>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
