@@ -278,6 +278,11 @@ export function drawReflectanceChart(ctx, scene, w, h, dark = true) {
     ctx.font = '11px ui-monospace, Menlo, Consolas, monospace';
     ctx.textAlign = x > w * 0.65 ? 'right' : 'left';
     ctx.fillText(`red edge ${scene.leaf.redEdgeNm} nm`, x + (x > w * 0.65 ? -6 : 6), PAD.t + 12);
+  } else if (scene.leaf.redEdgeBeyondGrid) {
+    ctx.fillStyle = t.fg;
+    ctx.font = '11px ui-monospace, Menlo, Consolas, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`red edge ${scene.leaf.redEdgeLabel} →`, w - PAD.r - 6, PAD.t + 12);
   }
 }
 
