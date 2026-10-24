@@ -153,6 +153,7 @@ Then open `http://localhost:8123`.
 | `src/exporter.js` | Data sheet composition, PNG/JPG, and a hand-rolled PDF writer |
 | `src/noise.js` | Seeded PRNG and fBm |
 | `src/main.js` | UI wiring |
+| `fonts/` | Atkinson Hyperlegible Next, self-hosted (SIL OFL 1.1, see `fonts/OFL.txt`) |
 
 Seeds are deterministic: the same seed always redraws the same terrain at any
 resolution, so an exported sheet can be reproduced exactly.
