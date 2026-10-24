@@ -235,7 +235,7 @@ export function composeSheet(scene, state, scale = 2) {
   yd = row(ctx, 'Antenna pigments',
     scene.suite.antennae.length ? scene.suite.antennae.map((p) => p.name).join(', ') : 'none', cx2, yd, colW);
   yd = row(ctx, 'UV screen', scene.suite.screen ? scene.suite.screen.name : 'not required', cx2, yd, colW);
-  yd = row(ctx, 'Red edge', scene.leaf.redEdgeNm ? `${scene.leaf.redEdgeNm} nm` : '—', cx2, yd, colW);
+  yd = row(ctx, 'Red edge', scene.leaf.redEdgeLabel || '—', cx2, yd, colW);
 
   y = Math.max(yc, yd) + 8;
   y = paragraph(ctx, scene.explanation, M, y, CW, { size: 12.5, lh: 18, color: DIM });

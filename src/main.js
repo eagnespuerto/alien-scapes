@@ -241,7 +241,7 @@ function paintReadout() {
     ['Antennae', scene.suite.antennae.length
       ? scene.suite.antennae.map((p) => p.name.split(' ')[0]).join(', ') : 'none'],
     ['Photons captured', `${(scene.leaf.captureFraction * 100).toFixed(0)} %`],
-    ['Red edge', scene.leaf.redEdgeNm ? `${scene.leaf.redEdgeNm} nm` : '—'],
+    ['Red edge', scene.leaf.redEdgeLabel || '—'],
     ['Cover', scene.biome.vegetated ? `${Math.round(scene.biome.density * 100)} %` : 'none',
       scene.biome.vegetated ? '' : 'warn'],
   ]);

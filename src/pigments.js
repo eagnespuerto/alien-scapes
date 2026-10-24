@@ -467,14 +467,28 @@ export function solveLeaf(light, suite, parRel) {
   const whiteY = spdToXyz(light.energy)[1];
   const rgb = spdToSrgbAbsolute(reflected, whiteY);
 
-  // Red edge: the steepest rise in reflectance anywhere past 600 nm. On Earth
-  // this lands near 720 nm; a far-red biosphere pushes it past 780.
-  let redEdge = null, bestSlope = 0;
-  for (let i = 1; i < LAMBDA.length - 1; i++) {
-    if (LAMBDA[i] < 600) continue;
-    const slope = (reflectance[i + 1] - reflectance[i - 1]) / (2 * LAMBDA_STEP);
-    if (slope > bestSlope) { bestSlope = slope; redEdge = LAMBDA[i]; }
+  // Red edge: the rise onto the near-infrared plateau after the LAST strong
+  // absorption band. Taking the steepest rise anywhere past 600 nm is wrong for
+  // near-infrared pigments: a bacteriochlorophyll leaf has a reflective window
+  // between its visible antenna and its 835 nm band, and the rise into that
+  // window is not the edge. On Earth the edge lands near 705-720 nm.
+  let lastDark = -1;
+  for (let i = 0; i < LAMBDA.length; i++) {
+    if (LAMBDA[i] >= 600 && absorptance[i] > 0.5) lastDark = i;
   }
+  let redEdge = null, bestSlope = 0, redEdgeBeyondGrid = false;
+  // Still absorbing at the end of the grid: the edge lies past it.
+  if (lastDark >= LAMBDA.length - 3) {
+    redEdgeBeyondGrid = true;
+  } else if (lastDark >= 0) {
+    const from = Math.max(1, lastDark - Math.round(30 / LAMBDA_STEP));
+    for (let i = from; i < LAMBDA.length - 1; i++) {
+      const slope = (reflectance[i + 1] - reflectance[i - 1]) / (2 * LAMBDA_STEP);
+      if (slope > bestSlope) { bestSlope = slope; redEdge = LAMBDA[i]; }
+    }
+  }
+  const redEdgeLabel = redEdgeBeyondGrid ? `beyond ${LAMBDA[LAMBDA.length - 1]} nm`
+    : redEdge ? `${redEdge} nm` : null;
 
   // Fraction of incident photons the suite actually captures.
   let cap = 0, tot = 0;
@@ -490,6 +504,8 @@ export function solveLeaf(light, suite, parRel) {
     depth,
     redEdgeNm: redEdge,
     redEdgeStrength: bestSlope,
+    redEdgeBeyondGrid,
+    redEdgeLabel,
     captureFraction: tot > 0 ? cap / tot : 0,
   };
 }
@@ -515,7 +531,12 @@ export function explainSuite(suite, light, leaf, peakNm) {
       `flavonoid-type screening layer is loaded into the epidermis.`
     );
   }
-  if (leaf.redEdgeNm) {
+  if (leaf.redEdgeBeyondGrid) {
+    bits.push(
+      `The leaf is still absorbing at ${leaf.redEdgeLabel.replace('beyond ', '')}, so its red edge ` +
+      `lies further into the infrared than this model computes - invisible to the naked eye.`
+    );
+  } else if (leaf.redEdgeNm) {
     bits.push(
       `The resulting red edge sits at ${leaf.redEdgeNm} nm` +
       (leaf.redEdgeNm > 760 ? ' - well beyond the terrestrial 720 nm, and invisible to the naked eye.' : '.')
