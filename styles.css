@@ -1,23 +1,45 @@
 /*
  * Alien-scapes.
  *
- * The interface stays deliberately quiet and dark: the whole point of the page
- * is judging subtle colour differences between one world's sky and another's,
- * and a bright or coloured chrome would bias every one of those judgements.
- * The single accent colour is set from JavaScript to the current star's own
- * computed disk colour.
+ * The page is a colour-viewing booth. Colour-assessment standards (ISO 3664)
+ * put the thing being judged against a neutral grey surround, because any
+ * tinted chrome biases the eye. So every surface here is an untinted grey, and
+ * the only colour in the interface is the current star's own computed disk
+ * colour, set from JavaScript as --accent.
+ *
+ * The computed colours sit in a flush strip under the landscape, like the
+ * patches on a calibration target photographed with the scene.
  */
 
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("fonts/atkinson-next-latin.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("fonts/atkinson-next-latin-ext.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
-  --bg: #0e0d11;
-  --panel: #17161b;
-  --panel-2: #1d1c22;
-  --line: #2a2830;
-  --fg: #e9e6e1;
-  --dim: #a29d95;
-  --faint: #6f6a64;
+  /* Neutral greys: R = G = B everywhere, so nothing tints the judgement. */
+  --booth: #2a2a2a;
+  --shelf: #323232;
+  --rule: #444444;
+  --ink: #eeeeee;
+  --ink-2: #c4c4c4;
+  --ink-3: #a3a3a3;
   --accent: #ffd8a8;
-  --radius: 10px;
+  --font: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
 }
 
@@ -25,165 +47,162 @@
 
 html, body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--booth);
+  color: var(--ink);
+  font: 15px/1.55 var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--accent); }
+a { color: var(--accent); text-underline-offset: 2px; }
 
 /* ---------------------------------------------------------------- header */
 
 .topbar {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 18px 26px;
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, #131117, #0e0d11);
+  gap: 14px 20px;
+  padding: 16px 28px;
   flex-wrap: wrap;
+  max-width: 1680px;
+  margin: 0 auto;
 }
 
 .brand { display: flex; align-items: center; gap: 12px; }
 
+/* The mark is the current star, lit by its own computed colour. */
 .brand .mark {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: radial-gradient(circle at 34% 32%, var(--accent), #7a4a1e 62%, #241a12);
-  box-shadow: 0 0 22px -4px var(--accent);
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 18px -2px var(--accent);
   transition: background .4s, box-shadow .4s;
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 19px;
-  font-weight: 620;
+  font-size: 22px;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.tagline { margin: 0; color: var(--dim); font-size: 13.5px; flex: 1; min-width: 220px; }
+.tagline { margin: 0; color: var(--ink-2); font-size: 14.5px; flex: 1; min-width: 240px; }
 
 /* ---------------------------------------------------------------- layout */
 
 .layout {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
-  gap: 22px;
-  padding: 22px 26px 60px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  padding: 4px 28px 64px;
   align-items: start;
   max-width: 1680px;
   margin: 0 auto;
 }
 
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-
 .controls {
-  padding: 4px 18px 18px;
+  background: var(--shelf);
+  border-radius: 8px;
+  padding: 2px 18px 18px;
   position: sticky;
-  top: 18px;
-  max-height: calc(100vh - 36px);
+  top: 16px;
+  max-height: calc(100vh - 32px);
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-.stage { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.stage { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 
 /* ---------------------------------------------------------------- controls */
 
-.group { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.group { padding: 16px 0; border-bottom: 1px solid var(--rule); }
 .group:last-child { border-bottom: 0; }
 
 .group h2 {
   margin: 0 0 10px;
-  font-size: 11px;
-  font-weight: 640;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-.sub { margin: 0 0 8px; font-size: 12px; color: var(--faint); }
+.sub { margin: 0 0 8px; font-size: 13px; color: var(--ink-3); }
 
 .note {
   margin: 8px 0 0;
-  font-size: 12.2px;
+  font-size: 13px;
   line-height: 1.5;
-  color: var(--faint);
+  color: var(--ink-3);
 }
 
-.field { display: block; margin-top: 12px; }
+.field { display: block; margin-top: 14px; }
 
 .field > span {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  font-size: 12.5px;
-  color: var(--dim);
-  margin-bottom: 6px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-bottom: 4px;
 }
 
 .field output {
-  font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: var(--fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 select, input[type="text"] {
   width: 100%;
   padding: 8px 10px;
-  background: var(--panel-2);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  background: var(--booth);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
-select:focus-visible, input:focus-visible, button:focus-visible {
+:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 input[type="range"] {
   width: 100%;
-  height: 22px;
+  height: 24px;
   margin: 0;
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
+  cursor: pointer;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 2px; background: var(--line);
+  height: 3px; border-radius: 2px; background: var(--rule);
 }
 input[type="range"]::-moz-range-track {
-  height: 4px; border-radius: 2px; background: var(--line);
+  height: 3px; border-radius: 2px; background: var(--rule);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 15px; height: 15px; margin-top: -5.5px;
+  width: 16px; height: 16px; margin-top: -6.5px;
   border-radius: 50%; background: var(--accent);
-  border: 0; cursor: grab;
+  border: 2px solid var(--booth);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 15px; height: 15px;
+  width: 14px; height: 14px;
   border-radius: 50%; background: var(--accent);
-  border: 0; cursor: grab;
+  border: 2px solid var(--booth);
 }
 
 button {
   font: inherit;
-  font-size: 13.5px;
-  padding: 9px 14px;
-  border-radius: 7px;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
   border: 1px solid transparent;
   background: var(--accent);
-  color: #1a140c;
-  font-weight: 560;
+  color: #1a1a1a;
+  font-weight: 600;
   cursor: pointer;
   transition: filter .15s;
 }
@@ -191,27 +210,28 @@ button:hover { filter: brightness(1.08); }
 
 button.ghost {
   background: transparent;
-  color: var(--dim);
-  border-color: var(--line);
+  color: var(--ink-2);
+  border-color: var(--rule);
+  font-weight: 500;
 }
-button.ghost:hover { color: var(--fg); border-color: var(--faint); }
+button.ghost:hover { color: var(--ink); border-color: var(--ink-3); filter: none; }
 
-button.small { margin-top: 8px; padding: 6px 10px; font-size: 12.5px; width: 100%; }
+button.small { margin-top: 10px; padding: 6px 10px; font-size: 13px; width: 100%; }
 
-/* star matrix */
+/* star matrix: each button shows the class's own blackbody colour */
 
 .starGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  gap: 4px;
 }
 
 .starGrid button {
-  padding: 7px 2px 6px;
-  font-size: 11px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--dim);
+  padding: 7px 2px 5px;
+  font-size: 12px;
+  background: var(--booth);
+  border: 1px solid var(--rule);
+  color: var(--ink-3);
   font-weight: 500;
   display: flex;
   flex-direction: column;
@@ -221,45 +241,42 @@ button.small { margin-top: 8px; padding: 6px 10px; font-size: 12.5px; width: 100
 
 .starGrid button .dot {
   width: 12px; height: 12px; border-radius: 50%;
-  box-shadow: 0 0 8px -2px currentColor;
 }
 
 .starGrid button[aria-pressed="true"] {
   border-color: var(--accent);
-  color: var(--fg);
-  background: #241f19;
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .seedRow { display: flex; gap: 8px; }
-.seedRow input { flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.seedRow input { flex: 1; font-variant-numeric: tabular-nums; }
 .seedRow button { margin-top: 0; width: auto; white-space: nowrap; }
 
 /* habitable-zone bar */
 
 .hzbar {
   position: relative;
-  height: 8px;
-  margin-top: 8px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #7a2b1e, #2b3f6e);
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #7a3a2e, #3a4a6e);
   overflow: hidden;
 }
 .hzbar .hzzone {
   position: absolute; top: 0; bottom: 0;
-  background: rgba(120, 220, 150, 0.55);
+  background: rgba(130, 210, 150, 0.6);
 }
 .hzbar .hzmark {
-  position: absolute; top: -3px; bottom: -3px;
-  width: 2px; background: var(--fg);
-  box-shadow: 0 0 6px rgba(0,0,0,0.8);
+  position: absolute; top: 0; bottom: 0;
+  width: 2px; background: var(--ink);
 }
 
-/* ---------------------------------------------------------------- stage */
+/* ---------------------------------------------------------------- landscape */
 
 .viewport {
   margin: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 8px;
   overflow: hidden;
   background: #000;
 }
@@ -271,137 +288,180 @@ button.small { margin-top: 8px; padding: 6px 10px; font-size: 12.5px; width: 100
   aspect-ratio: 16 / 9;
 }
 
-.viewport figcaption {
-  padding: 9px 14px;
-  font-size: 12.2px;
-  color: var(--faint);
-  background: var(--panel);
-  border-top: 1px solid var(--line);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.swatches {
+/* The calibration strip: patches touch, with no gaps or rounding, so
+   neighbouring colours are compared edge to edge. */
+.strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--shelf);
 }
 
-.swatch {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 10px 12px 11px;
+.patch { min-width: 0; padding-bottom: 10px; }
+.patch .fill { height: 44px; }
+.patch .lab {
+  margin: 8px 12px 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.swatch .chip {
-  height: 34px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.13);
-  margin-bottom: 8px;
-}
-.swatch .lab { font-size: 11.5px; color: var(--faint); }
-.swatch .hex {
-  font: 500 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: var(--fg);
-  text-transform: uppercase;
+.patch .hex {
+  margin: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
-/* readout */
+.viewport figcaption {
+  padding: 10px 12px 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+  background: var(--shelf);
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------------------------------------------------------------- numbers */
 
 .readout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px 36px;
+}
+
+.readCol h3,
+.exportBar h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.readCol dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+}
+.readCol dt, .readCol dd {
   padding: 4px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
 }
-
-.readCol { padding: 14px 18px; border-right: 1px solid var(--line); }
-.readCol:last-child { border-right: 0; }
-
-.readCol h3 {
-  margin: 0 0 10px;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-  font-weight: 640;
-}
-
-.readCol dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; }
-.readCol dt { font-size: 12.4px; color: var(--dim); }
+.readCol dt { color: var(--ink-2); }
 .readCol dd {
   margin: 0;
-  font: 500 12.4px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.readCol dd.warn { color: #ff9f6b; }
+.readCol dd.warn { color: #ffab80; }
 
-.verdict { padding: 15px 18px; }
-.verdict p { margin: 0 0 8px; font-size: 14px; }
+.verdict { max-width: 76ch; }
+.verdict p { margin: 0 0 8px; }
+.verdict p:first-child { font-size: 18px; line-height: 1.45; font-weight: 600; }
 .verdict p:last-child { margin-bottom: 0; }
-.verdict .dim { color: var(--dim); font-size: 13px; }
+.verdict .dim { color: var(--ink-2); font-size: 14.5px; }
 
-/* charts */
+/* ---------------------------------------------------------------- charts */
 
-.charts { padding: 14px 18px 16px; }
-
-.tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tabs {
+  display: flex;
+  gap: 4px 22px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--rule);
+}
 
 .tab {
   background: transparent;
-  border: 1px solid var(--line);
-  color: var(--dim);
-  padding: 6px 12px;
-  font-size: 12.5px;
-  font-weight: 500;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  color: var(--ink-3);
+  padding: 8px 0;
+  font-size: 14.5px;
+  font-weight: 600;
 }
-.tab.active { color: var(--fg); border-color: var(--accent); background: #221d17; }
+.tab:hover { color: var(--ink); filter: none; }
+.tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 
 #chart { display: block; width: 100%; height: auto; aspect-ratio: 5 / 2; }
 
-/* export */
+.charts .note { max-width: 80ch; }
 
-.exportBar { padding: 15px 18px 17px; }
-.exportBar h3 {
-  margin: 0 0 4px;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-  font-weight: 640;
+/* ---------------------------------------------------------------- download */
+
+.exportBar { border-top: 1px solid var(--rule); padding-top: 20px; }
+.exportBar .note { max-width: 70ch; margin-top: 0; }
+
+.btnRow { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+
+/* The three formats are one choice, so they read as one joined control. */
+.seg { display: inline-flex; align-items: stretch; }
+.segLabel {
+  display: flex; align-items: center;
+  padding: 0 12px;
+  font-size: 14px; font-weight: 600;
+  border: 1px solid var(--rule);
+  border-right: 0;
+  border-radius: 6px 0 0 6px;
 }
-.btnRow { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+.seg button { border-radius: 0; border-left: 1px solid rgba(0, 0, 0, 0.25); }
+.seg button:last-child { border-radius: 0 6px 6px 0; }
 
 /* ---------------------------------------------------------------- dialog */
 
 dialog {
-  max-width: 660px;
-  width: calc(100% - 40px);
-  background: var(--panel);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  max-width: 640px;
+  width: calc(100% - 32px);
+  background: var(--shelf);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
   padding: 0;
 }
-dialog::backdrop { background: rgba(6,5,8,0.72); }
-dialog article { padding: 26px 28px 22px; }
-dialog h2 { margin: 0 0 14px; font-size: 20px; }
-dialog h3 {
-  margin: 18px 0 6px;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-dialog p { margin: 0 0 10px; font-size: 13.6px; color: var(--dim); }
+dialog::backdrop { background: rgba(20, 20, 20, 0.75); }
+dialog article { padding: 24px 28px 22px; }
+dialog h2 { margin: 0 0 12px; font-size: 22px; }
+dialog h3 { margin: 20px 0 4px; font-size: 15px; }
+dialog p { margin: 0 0 10px; font-size: 14.5px; color: var(--ink-2); max-width: 68ch; }
 dialog form { margin-top: 18px; text-align: right; }
 
 /* ---------------------------------------------------------------- narrow */
 
+/* On narrow screens the landscape leads and stays pinned while the controls
+   scroll beneath it, so every slider change is visible as it happens. */
 @media (max-width: 1040px) {
-  .layout { grid-template-columns: 1fr; padding: 16px; }
+  .topbar { padding: 14px 16px; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 0 16px 48px; }
+  .stage { display: contents; }
+  .viewport {
+    order: -1;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+  .viewport figcaption { display: none; }
+  .patch .fill { height: 14px; }
+  .patch .lab { display: none; }
+  .patch .hex { margin: 4px 8px 0; font-size: 12px; }
+  .patch { padding-bottom: 6px; }
   .controls { position: static; max-height: none; }
-  .readCol { border-right: 0; border-bottom: 1px solid var(--line); }
-  .readCol:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 640px) {
+  #chart { aspect-ratio: 4 / 3; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 18px; }
+  .tab { white-space: nowrap; font-size: 14px; }
+}
+
+@media (max-width: 1040px) and (max-height: 560px) {
+  /* Landscape phones: pinning would cover most of the screen. */
+  .viewport { position: static; }
 }
 
 @media (prefers-reduced-motion: reduce) {

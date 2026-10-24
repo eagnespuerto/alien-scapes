@@ -48,7 +48,7 @@ function drawFrame(ctx, w, h, t, opts) {
   ctx.strokeRect(PAD.l + 0.5, stripY + 0.5, w - PAD.l - PAD.r - 1, stripH);
 
   // Grid and y ticks.
-  ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   for (const v of yTicks) {
@@ -89,7 +89,7 @@ function drawFrame(ctx, w, h, t, opts) {
   ctx.fillStyle = t.dim;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '11px system-ui, -apple-system, Segoe UI, sans-serif';
+  ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
   ctx.fillText('UV', xOf(320, w) - 8, PAD.t - 8);
   ctx.fillText('visible', vx0 + 6, PAD.t - 8);
   ctx.fillText('near-IR', vx1 + 6, PAD.t - 8);
@@ -172,11 +172,12 @@ export function drawSpectrumChart(ctx, scene, w, h, dark = true) {
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = t.fg;
-  ctx.font = '11px ui-monospace, Menlo, Consolas, monospace';
+  ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
   ctx.textAlign = px > w * 0.7 ? 'right' : 'left';
   ctx.fillText(
     `photon peak ${Math.round(scene.peakNm)} nm` + (scene.peakNm >= 1095 ? ' (beyond chart)' : ''),
-    px + (px > w * 0.7 ? -6 : 6), PAD.t + 12
+    // On narrow charts the legend fills the top-right, so the label drops to the foot.
+    px + (px > w * 0.7 ? -6 : 6), w < 520 ? h - PAD.b - 8 : PAD.t + 12
   );
 
   legend(ctx, w, h, dark, [
@@ -241,7 +242,7 @@ export function drawAbsorptionChart(ctx, scene, w, h, dark = true, extraKeys = [
   legend(ctx, w, h, dark, shown);
 
   ctx.fillStyle = t.dim;
-  ctx.font = '10px system-ui, -apple-system, Segoe UI, sans-serif';
+  ctx.font = '10px "Atkinson Hyperlegible Next", system-ui, sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText('* in the selected suite   |   shaded area = available photons',
     w - PAD.r, h - 4);
@@ -275,12 +276,12 @@ export function drawReflectanceChart(ctx, scene, w, h, dark = true) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = t.fg;
-    ctx.font = '11px ui-monospace, Menlo, Consolas, monospace';
+    ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
     ctx.textAlign = x > w * 0.65 ? 'right' : 'left';
     ctx.fillText(`red edge ${scene.leaf.redEdgeNm} nm`, x + (x > w * 0.65 ? -6 : 6), PAD.t + 12);
   } else if (scene.leaf.redEdgeBeyondGrid) {
     ctx.fillStyle = t.fg;
-    ctx.font = '11px ui-monospace, Menlo, Consolas, monospace';
+    ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`red edge ${scene.leaf.redEdgeLabel} →`, w - PAD.r - 6, PAD.t + 12);
   }
@@ -292,7 +293,7 @@ export function drawReflectanceChart(ctx, scene, w, h, dark = true) {
 
 function legend(ctx, w, h, dark, entries) {
   ctx.save();
-  ctx.font = '11px system-ui, -apple-system, Segoe UI, sans-serif';
+  ctx.font = '11px "Atkinson Hyperlegible Next", system-ui, sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   let y = PAD.t + 8;

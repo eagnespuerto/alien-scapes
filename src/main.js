@@ -61,20 +61,20 @@ function buildControls() {
     ['Spectral class grid', GRID_STARS],
     ['Other named stars', NAMED_STARS],
     ['Preset system hosts', Object.values(HOST_STARS)],
-  ], (s) => s.name, (s) => `${s.name} — ${s.cls}${s.lum} · ${s.teff.toLocaleString()} K`);
+  ], (s) => s.name, (s) => `${s.name} (${s.cls}${s.lum}, ${s.teff.toLocaleString()} K)`);
 
   // Photosystem: families first, then every individual reaction-centre pigment,
   // so a specific hypothesis can be pinned regardless of what wins on score.
   // The 'S:' / 'P:' prefixes keep both kinds in one control.
   fillGrouped($('strategySelect'), [
     ['Let the model choose', [
-      { v: 'S:auto', l: 'Best fit — any pigment' },
+      { v: 'S:auto', l: 'Best fit (any pigment)' },
       { v: 'S:chlorophyll', l: 'Best chlorophyll-type' },
       { v: 'S:retinal', l: 'Best retinal-type' },
       { v: 'S:nitroplast', l: 'Nitroplast-type' },
     ]],
     ['Pin a reaction centre', PIGMENTS.filter((p) => p.rc).map((p) => ({
-      v: 'P:' + p.key, l: `${p.name} — trap ${trapNm(p)} nm`,
+      v: 'P:' + p.key, l: `${p.name} (trap ${trapNm(p)} nm)`,
     }))],
   ], (o) => o.v, (o) => o.l);
 
@@ -84,7 +84,7 @@ function buildControls() {
   for (const s of GRID_STARS) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.title = `${s.name} — ${s.cls} ${s.lum}, ${s.teff.toLocaleString()} K. ${s.notes}`;
+    b.title = `${s.name}, ${s.cls} ${s.lum}, ${s.teff.toLocaleString()} K. ${s.notes}`;
     b.dataset.star = s.name;
     const dot = document.createElement('span');
     dot.className = 'dot';
@@ -177,7 +177,10 @@ function paintScape() {
 }
 
 function paintChart() {
-  const { ctx, w, h } = sizeCanvas($('chart'), 5 / 2);
+  // Narrow screens get a taller chart so the legend clears the curves.
+  // Keep this in step with the #chart aspect-ratio rule in styles.css.
+  const narrow = window.matchMedia('(max-width: 640px)').matches;
+  const { ctx, w, h } = sizeCanvas($('chart'), narrow ? 4 / 3 : 5 / 2);
   const extra = [scene.suite.primary.key, ...scene.suite.antennae.map((p) => p.key)];
   if (activeChart === 'spectrum') drawSpectrumChart(ctx, scene, w, h, true);
   else if (activeChart === 'absorption') drawAbsorptionChart(ctx, scene, w, h, true, extra);
@@ -185,20 +188,20 @@ function paintChart() {
 
   $('chartNote').textContent = {
     spectrum: 'Dashed: the spectrum arriving above the atmosphere. Solid warm: what reaches the '
-      + 'ground. Solid blue: the same light counted as photons rather than energy — always peaking '
+      + 'ground. Solid blue: the same light counted as photons rather than energy. It always peaks '
       + 'redder, because a red photon carries less energy.',
     absorption: 'Retinal, chlorophyll a and the nitroplast antenna are always plotted. Curves in '
       + 'the active suite are solid; the rest are dashed. The white line is the finished leaf, '
       + 'which absorbs far more broadly than any single pigment because tissue scatters light back '
       + 'through itself several times.',
-    reflectance: 'The step near the red end is the red edge — the sharpest spectral biosignature we '
-      + 'know how to look for. Its position moves with the pigment suite, so an alien red edge need '
-      + 'not sit where Earth’s does.',
+    reflectance: 'The step near the red end is the red edge, the sharpest spectral biosignature we '
+      + 'know how to look for. It moves with the pigment suite, so an alien red edge need not sit '
+      + 'where Earth’s does.',
   }[activeChart];
 }
 
 function chip(label, rgb, hex) {
-  return `<div class="swatch"><div class="chip" style="background:${toCss(rgb)}"></div>`
+  return `<div class="patch"><div class="fill" style="background:${toCss(rgb)}"></div>`
     + `<div class="lab">${label}</div><div class="hex">${hex}</div></div>`;
 }
 
@@ -209,11 +212,11 @@ function dlRows(pairs) {
 
 function paintReadout() {
   $('swatches').innerHTML = [
-    chip('Sky (zenith)', scene.colors.skyZenith, scene.hex.sky),
-    chip('Stellar disk', scene.colors.disk, scene.hex.disk),
-    chip(`Regolith · ${scene.mineral.name}`, scene.colors.rock, scene.hex.rock),
-    chip('Surface water', scene.colors.water, scene.hex.water),
-    chip('Vegetation', scene.colors.leaf, scene.hex.leaf),
+    chip('Sky overhead', scene.colors.skyZenith, scene.hex.sky),
+    chip('Star', scene.colors.disk, scene.hex.disk),
+    chip(`Ground (${scene.mineral.name.toLowerCase()})`, scene.colors.rock, scene.hex.rock),
+    chip('Water', scene.colors.water, scene.hex.water),
+    chip('Leaves', scene.colors.leaf, scene.hex.leaf),
   ].join('');
 
   const c = (scene.tempK - 273.15);
@@ -253,13 +256,13 @@ function paintReadout() {
   $('pigmentLine').textContent = scene.explanation;
 
   $('scapeCaption').textContent =
-    `${scene.planet.name} · ${scene.star.name} ${scene.star.teff.toLocaleString()} K · `
-    + `${scene.distanceAu} AU · ${scene.atm.short} · star ${Math.round(scene.elevation)}° up · seed ${scene.seed}`;
+    `${scene.planet.name}, orbiting ${scene.star.name} (${scene.star.teff.toLocaleString()} K) at `
+    + `${scene.distanceAu} AU. ${scene.atm.short} atmosphere, star ${Math.round(scene.elevation)}° up. Seed ${scene.seed}.`;
 
   // Notes under each control.
   $('planetNote').textContent = getPlanet(state.planetKey).notes;
   $('starNote').textContent = state.teffOverride
-    ? `Temperature overridden — luminosity and radius are still ${scene.star.name}'s.`
+    ? `Custom temperature. Luminosity and radius are still ${scene.star.name}'s.`
     : scene.star.notes;
   $('atmNote').textContent = scene.atm.description;
   $('mineralNote').textContent = scene.mineral.notes;
@@ -359,8 +362,12 @@ function wire() {
 
   for (const tab of document.querySelectorAll('.tab')) {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach((t) => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
       tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
       activeChart = tab.dataset.chart;
       paintChart();
     });
@@ -394,3 +401,5 @@ function wire() {
 buildControls();
 wire();
 update();
+// Canvas text uses the web font; redraw once it has loaded.
+if (document.fonts) document.fonts.ready.then(() => { paintScape(); paintChart(); });
