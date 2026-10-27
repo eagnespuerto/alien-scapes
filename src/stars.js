@@ -31,7 +31,7 @@ export const GRID_STARS = [
   { cls: 'F', lum: 'V', name: 'Procyon', short: 'Pro', teff: 6530, L: 6.93, R: 2.05, notes: 'F5 IV-V.' },
   { cls: 'G', lum: 'V', name: 'Sun', short: 'Sun', teff: 5778, L: 1.0, R: 1.0, notes: 'G2 V - the reference case.' },
   { cls: 'K', lum: 'V', name: 'Epsilon Eridani', short: 'eEri', teff: 5080, L: 0.34, R: 0.735, notes: 'K2 V.' },
-  { cls: 'M', lum: 'V', name: 'Proxima Centauri', short: 'Prox', teff: 3040, L: 0.0017, R: 0.154, notes: 'M5.5 Ve - nearest star.' },
+  { cls: 'M', lum: 'V', name: 'Proxima Centauri', short: 'Prox', teff: 2833, L: 0.0015, R: 0.162, notes: 'M5.5 Ve - nearest star. R and Teff from Anugu et al. 2026 (arXiv:2610.33373).' },
   { cls: 'O', lum: 'III', name: 'Meissa', short: 'Mei', teff: 35000, L: 165000, R: 10.0, notes: 'Lambda Orionis A, O8 III.' },
   { cls: 'B', lum: 'III', name: 'Bellatrix', short: 'Bel', teff: 22000, L: 9200, R: 5.75, notes: 'Gamma Orionis, B2 III.' },
   { cls: 'A', lum: 'III', name: 'Thuban', short: 'Thu', teff: 9750, L: 240, R: 3.4, notes: 'Alpha Draconis, A0 III.' },
